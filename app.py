@@ -8,10 +8,20 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
 import sys
-import torch
-from torch import nn
-import torchvision
-from torchvision import models
+# Optional PyTorch imports for serverless compatibility (Vercel Lambda limit is 500MB)
+try:
+    import torch
+    from torch import nn
+    import torchvision
+    from torchvision import models
+    TORCH_AVAILABLE = True
+except (ImportError, Exception):
+    torch = None
+    nn = None
+    torchvision = None
+    models = None
+    TORCH_AVAILABLE = False
+
 from PIL import Image
 import numpy as np
 import base64
@@ -23,51 +33,73 @@ import csv
 import uuid
 import hashlib
 
-app = Flask(__name__, static_folder='frontend')
-CORS(app)
-
 # Configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
-SAMPLES_FOLDER = os.path.join(BASE_DIR, 'frontend', 'samples')
+FRONTEND_DIR = os.path.join(BASE_DIR, 'frontend')
+SAMPLES_FOLDER = os.path.join(FRONTEND_DIR, 'samples')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 MODEL_PATH = os.path.join(BASE_DIR, 'Retinal_blindness_detection_Pytorch-master', 'classifier.pt')
-DB_PATH = os.path.join(BASE_DIR, 'screenings.db')
+
+# Detect Vercel Serverless / Read-Only Environment
+IS_VERCEL = bool(os.environ.get('VERCEL') == '1' or os.environ.get('VERCEL_ENV'))
+
+if IS_VERCEL or not os.access(BASE_DIR, os.W_OK):
+    UPLOAD_FOLDER = '/tmp/uploads'
+    DB_PATH = '/tmp/screenings.db'
+else:
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+    DB_PATH = os.path.join(BASE_DIR, 'screenings.db')
+
+app = Flask(__name__, static_folder=FRONTEND_DIR)
+CORS(app)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(SAMPLES_FOLDER, exist_ok=True)
+try:
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+except Exception:
+    pass
 
-# Device configuration
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"[VisionAries] Using compute device: {device}")
+try:
+    os.makedirs(SAMPLES_FOLDER, exist_ok=True)
+except Exception:
+    pass
 
 # Classes for diabetic retinopathy severity
 CLASSES = ['No DR', 'Mild', 'Moderate', 'Severe', 'Proliferative DR']
 
-# Image transformations
-test_transforms = torchvision.transforms.Compose([
-    torchvision.transforms.Resize((224, 224)),
-    torchvision.transforms.ToTensor(),
-    torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
-])
-
-# Initialize Model architecture
-model = models.resnet152(weights=None)
-num_ftrs = model.fc.in_features
-out_ftrs = 5
-model.fc = nn.Sequential(
-    nn.Linear(num_ftrs, 512),
-    nn.ReLU(),
-    nn.Linear(512, out_ftrs),
-    nn.LogSoftmax(dim=1)
-)
+# PyTorch device, transform, and model setup if PyTorch is available
+if TORCH_AVAILABLE and torch is not None:
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"[VisionAries] Using compute device: {device}")
+    
+    test_transforms = torchvision.transforms.Compose([
+        torchvision.transforms.Resize((224, 224)),
+        torchvision.transforms.ToTensor(),
+        torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+    ])
+    
+    model = models.resnet152(weights=None)
+    num_ftrs = model.fc.in_features
+    out_ftrs = 5
+    model.fc = nn.Sequential(
+        nn.Linear(num_ftrs, 512),
+        nn.ReLU(),
+        nn.Linear(512, out_ftrs),
+        nn.LogSoftmax(dim=1)
+    )
+else:
+    device = "cpu"
+    test_transforms = None
+    model = None
+    print("[VisionAries] PyTorch not loaded (Serverless mode). Using VisionAries Clinical Diagnostic Engine.")
 
 # Load model weights if available
 def load_model(path):
     """Load the trained model from checkpoint if available"""
+    if not TORCH_AVAILABLE or model is None:
+        return False
     if not os.path.exists(path):
         print(f"[VisionAries] Checkpoint not found at {path}. Enabling high-fidelity clinical diagnostic engine.")
         return False
@@ -281,7 +313,7 @@ def predict_image(image_path):
     """Make prediction on the uploaded image using PyTorch model or intelligent clinical engine"""
     image = Image.open(image_path).convert('RGB')
     
-    if model_loaded:
+    if TORCH_AVAILABLE and model_loaded and model is not None and test_transforms is not None:
         try:
             img_tensor = test_transforms(image).unsqueeze(0).to(device)
             with torch.no_grad():
@@ -316,12 +348,15 @@ def predict_image(image_path):
 @app.route('/')
 def index():
     """Serve the main VisionAries frontend page"""
-    return send_from_directory('frontend', 'index.html')
+    return send_from_directory(FRONTEND_DIR, 'index.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
-    """Serve static files"""
-    return send_from_directory('frontend', path)
+    """Serve static files or fall back to index.html"""
+    file_path = os.path.join(FRONTEND_DIR, path)
+    if os.path.exists(file_path):
+        return send_from_directory(FRONTEND_DIR, path)
+    return send_from_directory(FRONTEND_DIR, 'index.html')
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -330,8 +365,10 @@ def health_check():
         'status': 'healthy',
         'application': 'VisionAries Retinal Diagnostic Suite',
         'model_loaded': model_loaded,
+        'torch_available': TORCH_AVAILABLE,
         'device': str(device),
-        'version': '2.4.0-Clinical'
+        'version': '2.4.0-Clinical',
+        'platform': 'Vercel Serverless' if IS_VERCEL else 'Local'
     })
 
 @app.route('/api/clinicians', methods=['GET'])

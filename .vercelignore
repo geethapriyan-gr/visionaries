@@ -1,0 +1,14 @@
+.git
+.github
+*.md
+LICENSE
+Procfile
+Research Paper.pdf
+Retinal_blindness_detection_Pytorch-master/
+app_hf.py
+app_hf_beautiful.py
+upload_to_hf.ps1
+__pycache__
+*.pyc
+*.db
+uploads/
