@@ -35,7 +35,8 @@ import hashlib
 
 # Configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-FRONTEND_DIR = os.path.join(BASE_DIR, 'frontend')
+PUBLIC_DIR = os.path.join(BASE_DIR, 'public')
+FRONTEND_DIR = PUBLIC_DIR if os.path.exists(PUBLIC_DIR) else os.path.join(BASE_DIR, 'frontend')
 SAMPLES_FOLDER = os.path.join(FRONTEND_DIR, 'samples')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 MODEL_PATH = os.path.join(BASE_DIR, 'Retinal_blindness_detection_Pytorch-master', 'classifier.pt')

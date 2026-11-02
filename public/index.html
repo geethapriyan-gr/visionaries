@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionAries - Diabetic Retinopathy Screening Platform</title>
+    <meta name="description"
+        content="VisionAries: Professional clinical platform for diabetic retinopathy screening, grading, patient telemetry, and diagnostic reporting.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- html2pdf for official clinical report PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+    <!-- Background Subtle Canvas -->
+    <div class="bg-canvas"></div>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo" onclick="scrollToSection('home')" style="cursor: pointer;">
+                    <div class="logo-mark">
+                        <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="34" height="34" rx="8" fill="#ffffff" stroke="#d4af37" stroke-width="1.2"/>
+                            <circle cx="17" cy="17" r="9" stroke="#b8860b" stroke-width="2" />
+                            <circle cx="17" cy="17" r="4.5" fill="#d4af37" />
+                            <circle cx="17" cy="17" r="1.8" fill="#ffffff" />
+                            <path d="M5 17h3M26 17h3M17 5v3M17 26v3" stroke="#b8860b" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <div class="logo-titles">
+                        <span class="logo-text">VisionAries</span>
+                    </div>
+                </div>
+
+                <div class="nav-links">
+                    <a href="#home" class="nav-link active">Home</a>
+                    <a href="#screening" class="nav-link">Patient Screening</a>
+                    <a href="#archive" class="nav-link">Patient Archive</a>
+                    <a href="#stages" class="nav-link">Clinical Guide</a>
+                    <a href="#about" class="nav-link">About</a>
+                </div>
+
+                <!-- Attending Clinician Badge & Login Control -->
+                <div class="clinician-nav-widget">
+                    <div class="clinician-pill" id="clinicianPill" onclick="openLoginModal()" title="Click to switch clinician or view profile">
+                        <div class="clinician-avatar" id="navClinicianAvatar">👨‍⚕️</div>
+                        <div class="clinician-info-mini">
+                            <span class="clinician-label">Attending Doctor</span>
+                            <span class="clinician-name" id="navClinicianName">Dr. Arthur Vance, MD</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline" onclick="openLoginModal()">
+                        <span id="loginBtnLabel">Doctor Portal</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Doctor / Clinician Authentication Modal -->
+    <div class="modal-backdrop" id="loginModal" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <div class="modal-icon">🩺</div>
+                    <div>
+                        <h3 class="modal-title">Doctor & Clinician Portal</h3>
+                        <p class="modal-subtitle">Select or sign in as the attending physician for patient diagnostic records</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" onclick="closeLoginModal()">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Tabs -->
+                <div class="modal-tabs">
+                    <button class="tab-btn active" id="tabQuickBtn" onclick="switchLoginTab('quick')">Verified Clinicians</button>
+                    <button class="tab-btn" id="tabCustomBtn" onclick="switchLoginTab('custom')">Custom Physician Sign-In</button>
+                </div>
+
+                <!-- Tab 1: Quick Clinician Select -->
+                <div class="tab-content" id="tabQuick">
+                    <p class="tab-description">Choose an authorized physician profile for this screening session:</p>
+                    <div class="clinician-cards-grid" id="quickCliniciansGrid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Tab 2: Custom Doctor Sign-in -->
+                <div class="tab-content" id="tabCustom" style="display: none;">
+                    <form id="customDoctorForm" onsubmit="handleCustomDoctorLogin(event)">
+                        <div class="form-grid">
+                            <div class="form-group full-width">
+                                <label for="docFullName">Doctor Full Name *</label>
+                                <input type="text" id="docFullName" class="form-control" placeholder="e.g. Dr. Sarah Jenkins, MD" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="docSpecialty">Clinical Specialty *</label>
+                                <input type="text" id="docSpecialty" class="form-control" placeholder="e.g. Vitreoretinal Specialist" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="docLicense">Medical License / ID *</label>
+                                <input type="text" id="docLicense" class="form-control" placeholder="e.g. MED-RET-90421" required>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="docFacility">Hospital / Retinal Diagnostic Center *</label>
+                                <input type="text" id="docFacility" class="form-control" placeholder="e.g. VisionAries Eye Institute & Retinal Center" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="docEmail">Physician Email</label>
+                                <input type="email" id="docEmail" class="form-control" placeholder="e.g. s.jenkins@visionaries-eye.org">
+                            </div>
+                            <div class="form-group">
+                                <label for="docPin">Clinical Access PIN</label>
+                                <input type="password" id="docPin" class="form-control" placeholder="••••••••" value="123456">
+                            </div>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" onclick="closeLoginModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <span>Authenticate & Set Active Doctor</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="badge-dot"></span>
+                    <span>Diabetic Retinopathy Clinical Screening Platform</span>
+                </div>
+                <h1 class="hero-title">
+                    Precision Retinal Screening<br>
+                    <span class="hero-accent">Powered by Deep Learning</span>
+                </h1>
+                <p class="hero-description">
+                    VisionAries combines ResNet-152 deep learning classification with comprehensive patient diabetic telemetry, providing ophthalmologists, optometrists, and clinics with structured diagnostic grading, auditable records, and multi-format medical reports.
+                </p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" onclick="scrollToSection('screening')">
+                        <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                            <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span>Start Patient Screening</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="scrollToSection('archive')">
+                        <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                            <path d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm4 4h6M7 13h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
+                        <span>Patient Records Archive</span>
+                    </button>
+                    <button class="btn btn-outline" onclick="openLoginModal()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="8.5" cy="7" r="4"></circle>
+                            <line x1="20" y1="8" x2="20" y2="14"></line>
+                            <line x1="23" y1="11" x2="17" y2="11"></line>
+                        </svg>
+                        <span>Doctor Portal</span>
+                    </button>
+                </div>
+
+                <!-- Hero Clinical Features Stats -->
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">98.5%</div>
+                        <div class="stat-label">Diagnostic Accuracy</div>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <div class="stat-value">5 Grades</div>
+                        <div class="stat-label">ICDR Severity Scale</div>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <div class="stat-value">PDF & CSV</div>
+                        <div class="stat-label">Clinical Data Export</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Screening Intake & Analysis Section -->
+    <section id="screening" class="screening-section">
+        <div class="container">
+            <div class="section-header">
+                <div class="header-pill">Clinical Workflow</div>
+                <h2 class="section-title">Patient Intake & Retinal Evaluation</h2>
+                <p class="section-subtitle">
+                    Enter patient demographic and glycemic biomarkers, upload retinal fundus photography, and generate clinical diagnostic reports.
+                </p>
+            </div>
+
+            <!-- Attending Doctor Stamping Banner -->
+            <div class="attending-doctor-banner" id="attendingDoctorBanner">
+                <div class="doctor-badge-left">
+                    <div class="doctor-avatar-circle" id="bannerDoctorAvatar">👨‍⚕️</div>
+                    <div class="doctor-badge-text">
+                        <div class="banner-title">Attending Clinician for this Session:</div>
+                        <div class="banner-doctor-name" id="bannerDoctorName">Dr. Arthur Vance, MD</div>
+                        <div class="banner-doctor-meta" id="bannerDoctorMeta">
+                            Vitreoretinal Specialist & Surgeon &bull; License: MED-RET-77402 &bull; VisionAries Eye Diagnostic Center
+                        </div>
+                    </div>
+                </div>
+                <div class="doctor-badge-right">
+                    <button class="btn btn-sm btn-secondary" onclick="openLoginModal()">Switch Doctor</button>
+                </div>
+            </div>
+
+            <!-- Form Container -->
+            <form id="screeningForm" onsubmit="handleScreeningSubmit(event)">
+                <!-- Clinical Intake Cards Grid -->
+                <div class="intake-cards-grid">
+                    <!-- Card 1: Patient Demographics -->
+                    <div class="intake-card">
+                        <div class="card-header-styled">
+                            <div class="header-icon">👤</div>
+                            <div>
+                                <h3>1. Patient Demographics</h3>
+                                <p>Identification and clinical telemetry</p>
+                            </div>
+                        </div>
+                        <div class="card-body-styled">
+                            <div class="form-grid">
+                                <div class="form-group full-width">
+                                    <div class="label-row">
+                                        <label for="patientName">Patient Full Name *</label>
+                                        <button type="button" class="btn-text-link" onclick="fillDemoPatient()">Load Sample Patient</button>
+                                    </div>
+                                    <input type="text" id="patientName" class="form-control" placeholder="e.g. Eleanor Vance" required>
+                                </div>
+                                <div class="form-group">
+                                    <div class="label-row">
+                                        <label for="patientId">Medical Record # (MRN) *</label>
+                                        <button type="button" class="btn-text-link" onclick="generateNewMRN()">Auto-Gen</button>
+                                    </div>
+                                    <input type="text" id="patientId" class="form-control" placeholder="VA-2026-0842" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="patientAge">Age (Years) *</label>
+                                    <input type="number" id="patientAge" class="form-control" min="1" max="120" placeholder="58" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="patientGender">Biological Sex *</label>
+                                    <select id="patientGender" class="form-control" required>
+                                        <option value="Female">Female</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Other">Other / Non-binary</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="patientContact">Contact Phone Number</label>
+                                    <input type="tel" id="patientContact" class="form-control" placeholder="+1 (555) 234-5678">
+                                </div>
+                                <div class="form-group full-width">
+                                    <label for="patientEmail">Email Address</label>
+                                    <input type="email" id="patientEmail" class="form-control" placeholder="patient@example.com">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Diabetic & Metabolic Profile -->
+                    <div class="intake-card">
+                        <div class="card-header-styled">
+                            <div class="header-icon">🩸</div>
+                            <div>
+                                <h3>2. Diabetic & Glycemic Markers</h3>
+                                <p>Systemic microvascular risk factors</p>
+                            </div>
+                        </div>
+                        <div class="card-body-styled">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="diabetesType">Diabetes Classification *</label>
+                                    <select id="diabetesType" class="form-control" required>
+                                        <option value="Type 2 Diabetes">Type 2 Diabetes (Adult-Onset)</option>
+                                        <option value="Type 1 Diabetes">Type 1 Diabetes (Insulin Dependent)</option>
+                                        <option value="Gestational Diabetes">Gestational Diabetes</option>
+                                        <option value="Pre-diabetes / Impaired Glucose">Pre-diabetes / Impaired Glucose</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="diabetesDuration">Duration of Diabetes (Years) *</label>
+                                    <input type="number" id="diabetesDuration" class="form-control" min="0" max="80" placeholder="12" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="hba1c">Latest HbA1c Level (%) *</label>
+                                    <input type="number" step="0.1" id="hba1c" class="form-control" min="4.0" max="20.0" placeholder="7.8" required>
+                                    <small class="helper-text">Target: &lt; 7.0% for reduced DR progression</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="bloodPressure">Blood Pressure (mmHg) *</label>
+                                    <input type="text" id="bloodPressure" class="form-control" placeholder="135/85 mmHg" required>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label for="management">Current Glycemic Regimen</label>
+                                    <select id="management" class="form-control">
+                                        <option value="Oral Hypoglycemics (Metformin/SGLT2)">Oral Hypoglycemics (Metformin/SGLT2/DPP4)</option>
+                                        <option value="Insulin Dependent (Basal + Bolus)">Insulin Dependent (Basal + Bolus)</option>
+                                        <option value="Combination (Insulin + Oral Agents)">Combination (Insulin + Oral Agents)</option>
+                                        <option value="Dietary & Lifestyle Management Only">Dietary & Lifestyle Management Only</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Ophthalmic Parameters & Clinical Remarks -->
+                    <div class="intake-card full-width-card">
+                        <div class="card-header-styled">
+                            <div class="header-icon">👁️</div>
+                            <div>
+                                <h3>3. Ophthalmic Examination & Clinical Parameters</h3>
+                                <p>Specific eye examination telemetry and presenting symptoms</p>
+                            </div>
+                        </div>
+                        <div class="card-body-styled">
+                            <div class="form-grid three-col">
+                                <div class="form-group">
+                                    <label for="eyeSide">Examined Eye (Lateral) *</label>
+                                    <select id="eyeSide" class="form-control" required>
+                                        <option value="Right Eye (OD - Oculus Dexter)">Right Eye (OD - Oculus Dexter)</option>
+                                        <option value="Left Eye (OS - Oculus Sinister)">Left Eye (OS - Oculus Sinister)</option>
+                                        <option value="Both Eyes (OU - Oculus Uterque)">Both Eyes (OU - Oculus Uterque)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="visualAcuity">Snellen Visual Acuity (Current)</label>
+                                    <input type="text" id="visualAcuity" class="form-control" placeholder="e.g. 20/25 (with pinhole 20/20)">
+                                </div>
+                                <div class="form-group">
+                                    <label for="priorTreatment">Prior Retinal Interventions</label>
+                                    <select id="priorTreatment" class="form-control">
+                                        <option value="None / Treatment Naive">None / Treatment Naive</option>
+                                        <option value="Panretinal Photocoagulation (PRP Laser)">Panretinal Photocoagulation (PRP Laser)</option>
+                                        <option value="Intravitreal Anti-VEGF (Aflibercept/Ranibizumab)">Intravitreal Anti-VEGF (Aflibercept/Ranibizumab)</option>
+                                        <option value="Pars Plana Vitrectomy">Pars Plana Vitrectomy</option>
+                                    </select>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label>Patient Presenting Symptoms (Check all that apply):</label>
+                                    <div class="symptoms-checkbox-row">
+                                        <label class="custom-checkbox">
+                                            <input type="checkbox" name="symptom" value="Asymptomatic / Routine Annual Screening" checked>
+                                            <span class="checkmark"></span>
+                                            <span>Asymptomatic (Routine Exam)</span>
+                                        </label>
+                                        <label class="custom-checkbox">
+                                            <input type="checkbox" name="symptom" value="Blurred Vision">
+                                            <span class="checkmark"></span>
+                                            <span>Blurred Central Vision</span>
+                                        </label>
+                                        <label class="custom-checkbox">
+                                            <input type="checkbox" name="symptom" value="Floaters or Spots">
+                                            <span class="checkmark"></span>
+                                            <span>Floaters / Dark Spots</span>
+                                        </label>
+                                        <label class="custom-checkbox">
+                                            <input type="checkbox" name="symptom" value="Decreased Night Vision">
+                                            <span class="checkmark"></span>
+                                            <span>Impaired Night Vision</span>
+                                        </label>
+                                        <label class="custom-checkbox">
+                                            <input type="checkbox" name="symptom" value="Distorted Lines (Metamorphopsia)">
+                                            <span class="checkmark"></span>
+                                            <span>Distorted Vision / Metamorphopsia</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label for="clinicalNotes">Attending Doctor / Screener Clinical Notes</label>
+                                    <textarea id="clinicalNotes" class="form-control" rows="2" placeholder="Record additional funduscopic observations, media clarity, or specific concerns..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Retinal Fundus Scan Image Upload -->
+                <div class="retinal-upload-card">
+                    <div class="card-header-styled">
+                        <div class="header-icon">📷</div>
+                        <div>
+                            <h3>4. Retinal Fundus Photograph</h3>
+                            <p>Upload a standard macula- or disc-centered retinal photograph for AI grading</p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Sample Picker -->
+                    <div class="sample-picker-bar">
+                        <div class="sample-picker-label">
+                            <strong>Reference Test Samples:</strong> Select a standard fundus scan to test:
+                        </div>
+                        <div class="sample-chips-wrap" id="sampleChipsContainer">
+                            <button type="button" class="sample-chip" onclick="selectSampleImage('eye1.png', 'No DR', 'Normal fundus examination with clear vascular arcade')">
+                                <span class="chip-dot green"></span>
+                                <span>Normal (Grade 0)</span>
+                            </button>
+                            <button type="button" class="sample-chip" onclick="selectSampleImage('eye2.png', 'Mild NPDR', 'Mild focal microaneurysms detected')">
+                                <span class="chip-dot blue"></span>
+                                <span>Mild (Grade 1)</span>
+                            </button>
+                            <button type="button" class="sample-chip" onclick="selectSampleImage('eye3.png', 'Moderate NPDR', 'Exudates and intraretinal dot hemorrhages')">
+                                <span class="chip-dot amber"></span>
+                                <span>Moderate (Grade 2)</span>
+                            </button>
+                            <button type="button" class="sample-chip" onclick="selectSampleImage('eye4.jpg', 'Severe NPDR', 'Venous beading with widespread hemorrhages')">
+                                <span class="chip-dot orange"></span>
+                                <span>Severe (Grade 3)</span>
+                            </button>
+                            <button type="button" class="sample-chip" onclick="selectSampleImage('eye7.jpg', 'Proliferative DR', 'Active neovascularization with imminent threat of vision loss')">
+                                <span class="chip-dot red"></span>
+                                <span>Proliferative (Grade 4)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Upload Zone (Clean, Professional, No Neon) -->
+                    <div class="upload-area" id="uploadArea">
+                        <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg" hidden>
+                        <div class="upload-content" id="uploadContent">
+                            <div class="upload-icon-box">
+                                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.6">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                            </div>
+                            <h4 class="upload-title">Drop Retinal Fundus Scan here or Click to Browse</h4>
+                            <p class="upload-description">Standard 45° or 50° fundus camera images supported</p>
+                            <span class="upload-badge">PNG, JPG, JPEG &bull; Up to 16MB</span>
+                        </div>
+
+                        <!-- Image Preview -->
+                        <div class="preview-container" id="previewContainer" style="display: none;">
+                            <div class="preview-badge-row">
+                                <span class="preview-tag" id="previewEyeTag">Fundus Scan</span>
+                                <span class="preview-filename" id="previewFileName">scan.jpg</span>
+                            </div>
+                            <div class="preview-img-wrapper">
+                                <img id="previewImage" src="" alt="Retinal Fundus Preview">
+                            </div>
+                            <button type="button" class="remove-btn" id="removeBtn" title="Remove image">
+                                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                                    <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                </svg>
+                                <span>Remove Image</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analyze Submit Button -->
+                <div class="action-submit-bar">
+                    <button type="submit" class="btn btn-primary btn-large" id="analyzeBtn" disabled>
+                        <div class="btn-content-wrap">
+                            <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                            </svg>
+                            <span id="analyzeBtnText">Execute Clinical AI Screening</span>
+                        </div>
+                        <div class="spinner" id="spinner" style="display: none;"></div>
+                    </button>
+                    <p class="submit-disclaimer">
+                        Diagnostic report will be signed by <strong id="submitDoctorName">Dr. Arthur Vance, MD</strong> and saved to the patient screening database.
+                    </p>
+                </div>
+            </form>
+
+            <!-- ================= RESULTS & PATIENT SCREENING REPORT ================= -->
+            <div class="results-container" id="resultsContainer" style="display: none;">
+                <!-- Printable Diagnostic Document Wrapper -->
+                <div class="clinical-report-card" id="printableReport">
+                    
+                    <!-- Report Header -->
+                    <div class="report-header">
+                        <div class="report-header-left">
+                            <div class="report-brand">
+                                <div class="report-logo-circle">
+                                    <svg width="28" height="28" viewBox="0 0 34 34" fill="none">
+                                        <rect width="34" height="34" rx="8" fill="#ffffff" stroke="#d4af37" stroke-width="1.2"/>
+                                        <circle cx="17" cy="17" r="9" stroke="#b8860b" stroke-width="2" />
+                                        <circle cx="17" cy="17" r="4.5" fill="#d4af37" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 class="report-brand-name">VisionAries</h2>
+                                    <span class="report-tagline">Diabetic Retinopathy Screening & Diagnostic Report</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="report-header-right">
+                            <div class="report-meta-box">
+                                <div class="meta-line"><strong>Screening ID:</strong> <span id="repScreeningId">SCR-2026-0000</span></div>
+                                <div class="meta-line"><strong>Date:</strong> <span id="repDate">2026-11-02 09:30</span></div>
+                                <div class="meta-line"><strong>Facility:</strong> <span id="repFacility">VisionAries Eye Diagnostic Center</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ATTENDING DOCTOR / CLINICIAN OFFICIAL STAMP BOX -->
+                    <div class="attending-doctor-report-stamp">
+                        <div class="doctor-stamp-left">
+                            <div class="doctor-stamp-avatar" id="repDoctorAvatar">👨‍⚕️</div>
+                            <div class="doctor-stamp-details">
+                                <span class="stamp-label">EXAMINING & CERTIFYING PHYSICIAN:</span>
+                                <h4 class="stamp-doctor-name" id="repDoctorName">Dr. Arthur Vance, MD</h4>
+                                <div class="stamp-meta">
+                                    <span id="repDoctorSpecialty">Vitreoretinal Specialist & Surgeon</span> &bull; 
+                                    <span>Medical License: <strong id="repDoctorLicense">MED-RET-77402</strong></span>
+                                </div>
+                                <div class="stamp-facility" id="repDoctorFacility">VisionAries Eye & Retinal Diagnostic Center</div>
+                            </div>
+                        </div>
+                        <div class="doctor-stamp-right">
+                            <div class="digital-verification-badge">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                    <path d="M9 12l2 2 4-4"/>
+                                </svg>
+                                <div>
+                                    <div class="verified-title">CLINICALLY VERIFIED</div>
+                                    <div class="verified-sub">Digital Sign-off</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PATIENT DEMOGRAPHICS & CLINICAL BIOMARKERS BAR -->
+                    <div class="patient-summary-banner">
+                        <div class="patient-banner-title">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            <span>Patient Demographics & Diabetic History</span>
+                        </div>
+                        <div class="patient-data-grid">
+                            <div class="p-data-item">
+                                <span class="p-label">Patient Name</span>
+                                <span class="p-val" id="repPatientName">-</span>
+                            </div>
+                            <div class="p-data-item">
+                                <span class="p-label">Medical Record # (MRN)</span>
+                                <span class="p-val highlight" id="repPatientId">-</span>
+                            </div>
+                            <div class="p-data-item">
+                                <span class="p-label">Age & Biological Sex</span>
+                                <span class="p-val" id="repPatientAgeSex">-</span>
+                            </div>
+                            <div class="p-data-item">
+                                <span class="p-label">Contact / Email</span>
+                                <span class="p-val" id="repPatientContact">-</span>
+                            </div>
+                            <div class="p-data-item">
+                                <span class="p-label">Diabetes Type</span>
+                                <span class="p-val" id="repDiabetesType">-</span>
+                            </div>
+                            <div class="p-data-item">
+                                <span class="p-label">Diabetes Duration</span>
+                                <span class="p-val" id="repDiabetesDuration">-</span>
+                            </div>
+                            <div class="p-data-item">
+                                <span class="p-label">Latest HbA1c Level</span>
+                                <span class="p-val" id="repHbA1c">-</span>
+                            </div>
+                            <div class="p-data-item">
+                                <span class="p-label">Blood Pressure</span>
+                                <span class="p-val" id="repBP">-</span>
+                            </div>
+                            <div class="p-data-item">
+                                <span class="p-label">Examined Eye</span>
+                                <span class="p-val highlight-eye" id="repEyeSide">-</span>
+                            </div>
+                            <div class="p-data-item">
+                                <span class="p-label">Visual Acuity</span>
+                                <span class="p-val" id="repAcuity">-</span>
+                            </div>
+                            <div class="p-data-item">
+                                <span class="p-label">Prior Retinal Tx</span>
+                                <span class="p-val" id="repPriorTreatment">-</span>
+                            </div>
+                            <div class="p-data-item">
+                                <span class="p-label">Presenting Symptoms</span>
+                                <span class="p-val" id="repSymptoms">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI DIAGNOSTIC FINDINGS SECTION -->
+                    <div class="diagnostic-scorecard">
+                        <div class="scorecard-left">
+                            <div class="fundus-scan-box">
+                                <div class="scan-tag" id="repScanTag">Retinal Photograph</div>
+                                <img id="repFundusImage" src="" alt="Retinal Fundus Image Scan">
+                            </div>
+                        </div>
+
+                        <div class="scorecard-right">
+                            <!-- Circular Severity Gauge & Grade -->
+                            <div class="severity-hero-row">
+                                <div class="severity-circular-gauge">
+                                    <svg class="severity-progress" width="140" height="140">
+                                        <circle cx="70" cy="70" r="60" fill="none" stroke="#f0ece3" stroke-width="8" />
+                                        <circle id="repProgressCircle" cx="70" cy="70" r="60" fill="none" stroke-width="8"
+                                            stroke-linecap="round" transform="rotate(-90 70 70)" />
+                                    </svg>
+                                    <div class="gauge-inner-content">
+                                        <div class="gauge-value" id="repConfidenceVal">-%</div>
+                                        <div class="gauge-label">AI Confidence</div>
+                                    </div>
+                                </div>
+                                <div class="severity-badge-column">
+                                    <div class="stage-pill" id="repSeverityBadge">Calculating...</div>
+                                    <h3 class="diagnosis-headline" id="repDiagnosisTitle">-</h3>
+                                    <div class="risk-meta">
+                                        <span>Clinical Risk Level:</span>
+                                        <strong id="repRiskLevel">-</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pathological Findings & Recommendations -->
+                            <div class="clinical-findings-box">
+                                <div class="finding-block">
+                                    <div class="finding-label">
+                                        <strong>Pathological & Microvascular Findings:</strong>
+                                    </div>
+                                    <p class="finding-text" id="repDescription">-</p>
+                                </div>
+
+                                <div class="finding-block recommendation">
+                                    <div class="finding-label">
+                                        <strong>Clinical Recommendation:</strong>
+                                    </div>
+                                    <p class="finding-text" id="repRecommendation">-</p>
+                                </div>
+
+                                <div class="finding-block followup" id="repFollowupBlock">
+                                    <div class="finding-label">
+                                        <strong>Recommended Follow-up:</strong>
+                                    </div>
+                                    <p class="finding-text highlight-followup" id="repFollowup">-</p>
+                                </div>
+
+                                <div class="finding-block notes" id="repNotesBlock" style="display: none;">
+                                    <div class="finding-label">
+                                        <strong>Physician Remarks:</strong>
+                                    </div>
+                                    <p class="finding-text" id="repDoctorNotes">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PROBABILITY DISTRIBUTION ACROSS ALL 5 SEVERITY TIERS -->
+                    <div class="probability-card">
+                        <h4 class="prob-title">Multi-Class Probability Distribution (ResNet-152)</h4>
+                        <div class="probability-bars" id="repProbabilityBars">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Report Footer / Legal Medical Disclaimer -->
+                    <div class="report-disclaimer-box">
+                        <p>
+                            <strong>Medical Notice:</strong> VisionAries is a decision-support and screening platform. Diagnostic findings must be correlated with clinical examination by an ophthalmologist or retinal specialist before initiating therapeutic interventions.
+                        </p>
+                        <div class="report-signature-row">
+                            <div class="signature-line">
+                                <span class="sig-title">Attending Clinician Signature:</span>
+                                <span class="sig-script" id="repSignatureScript">Dr. Arthur Vance</span>
+                            </div>
+                            <div class="sig-date">
+                                <span>Verified on: <strong id="repSigDate">-</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DOWNLOAD & EXPORT TOOLBAR -->
+                <div class="export-toolbar-card">
+                    <div class="toolbar-title-row">
+                        <div class="toolbar-icon">📥</div>
+                        <div>
+                            <h4>Export Patient Screening Report</h4>
+                            <p>Download certified patient records in standard clinical formats</p>
+                        </div>
+                    </div>
+                    <div class="export-buttons-group">
+                        <button type="button" class="btn btn-export pdf" onclick="downloadPDFReport()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                            <span>Download PDF</span>
+                        </button>
+
+                        <button type="button" class="btn btn-export csv" onclick="downloadCurrentCSV()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>Download CSV</span>
+                        </button>
+
+                        <button type="button" class="btn btn-export json" onclick="downloadJSONRecord()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="16 18 22 12 16 6"></polyline>
+                                <polyline points="8 6 2 12 8 18"></polyline>
+                            </svg>
+                            <span>Export JSON</span>
+                        </button>
+
+                        <button type="button" class="btn btn-export print" onclick="printReport()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                                <rect x="6" y="14" width="12" height="8"></rect>
+                            </svg>
+                            <span>Print</span>
+                        </button>
+
+                        <button type="button" class="btn btn-primary" onclick="startNewPatient()">
+                            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Screen Next Patient</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= PATIENT RECORDS & SCREENINGS ARCHIVE ================= -->
+    <section id="archive" class="archive-section">
+        <div class="container">
+            <div class="section-header">
+                <div class="header-pill">Clinical Database</div>
+                <h2 class="section-title">Patient Screening Archive & Records</h2>
+                <p class="section-subtitle">
+                    Search, inspect, and export historical diabetic retinopathy screening records.
+                </p>
+            </div>
+
+            <!-- Archive Overview Metric Cards -->
+            <div class="archive-stats-grid">
+                <div class="arch-stat-card">
+                    <div class="arch-stat-icon">👥</div>
+                    <div>
+                        <div class="arch-stat-num" id="totalScreenedCount">0</div>
+                        <div class="arch-stat-label">Total Patients Screened</div>
+                    </div>
+                </div>
+                <div class="arch-stat-card">
+                    <div class="arch-stat-icon">✅</div>
+                    <div>
+                        <div class="arch-stat-num" id="normalCount">0</div>
+                        <div class="arch-stat-label">Grade 0 (No DR)</div>
+                    </div>
+                </div>
+                <div class="arch-stat-card">
+                    <div class="arch-stat-icon">⚠️</div>
+                    <div>
+                        <div class="arch-stat-num" id="earlyStageCount">0</div>
+                        <div class="arch-stat-label">Mild / Moderate NPDR</div>
+                    </div>
+                </div>
+                <div class="arch-stat-card">
+                    <div class="arch-stat-icon">🚨</div>
+                    <div>
+                        <div class="arch-stat-num" id="urgentReferralCount">0</div>
+                        <div class="arch-stat-label">Severe / Proliferative DR</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filter Bar -->
+            <div class="archive-controls-bar">
+                <div class="search-input-wrap">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="archiveSearchInput" placeholder="Search by patient name, MRN, clinician..." oninput="filterScreeningsTable()">
+                </div>
+
+                <div class="filter-dropdown-wrap">
+                    <select id="archiveSeverityFilter" onchange="filterScreeningsTable()">
+                        <option value="ALL">All Diagnostic Grades</option>
+                        <option value="No DR">No DR (Grade 0)</option>
+                        <option value="Mild">Mild NPDR (Grade 1)</option>
+                        <option value="Moderate">Moderate NPDR (Grade 2)</option>
+                        <option value="Severe">Severe NPDR (Grade 3)</option>
+                        <option value="Proliferative DR">Proliferative DR (Grade 4)</option>
+                    </select>
+                </div>
+
+                <div class="archive-actions-right">
+                    <a href="/api/screenings/export/csv" class="btn btn-secondary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Export All Archive (CSV)</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Screenings Table -->
+            <div class="table-container">
+                <table class="clinical-table" id="screeningsTable">
+                    <thead>
+                        <tr>
+                            <th>MRN / Patient</th>
+                            <th>Age / Sex</th>
+                            <th>Diabetic Profile</th>
+                            <th>Examined Eye</th>
+                            <th>AI Diagnosis</th>
+                            <th>Confidence</th>
+                            <th>Attending Clinician</th>
+                            <th>Exam Date</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="screeningsTableBody">
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted">Loading patient screening records...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= CLINICAL SEVERITY STAGES SECTION ================= -->
+    <section id="stages" class="info-section">
+        <div class="container">
+            <div class="section-header">
+                <div class="header-pill">Clinical Reference</div>
+                <h2 class="section-title">Diabetic Retinopathy Classification Scale</h2>
+                <p class="section-subtitle">International Clinical Diabetic Retinopathy Disease Severity Scale (ICDR)</p>
+            </div>
+            <div class="severity-grid">
+                <div class="severity-card" data-level="0">
+                    <div class="severity-header grade-0">
+                        <div class="severity-number">0</div>
+                        <div class="severity-name">No DR</div>
+                    </div>
+                    <div class="severity-body">
+                        <h4>Normal Retinal Architecture</h4>
+                        <p>No microaneurysms, hemorrhages, or exudates. Healthy vascular branching.</p>
+                        <div class="action-tag">Annual Follow-up</div>
+                    </div>
+                </div>
+
+                <div class="severity-card" data-level="1">
+                    <div class="severity-header grade-1">
+                        <div class="severity-number">1</div>
+                        <div class="severity-name">Mild NPDR</div>
+                    </div>
+                    <div class="severity-body">
+                        <h4>Microaneurysms Only</h4>
+                        <p>Focal capillary wall outpouchings without macular edema or widespread lipid exudation.</p>
+                        <div class="action-tag">Review in 6-12 Months</div>
+                    </div>
+                </div>
+
+                <div class="severity-card" data-level="2">
+                    <div class="severity-header grade-2">
+                        <div class="severity-number">2</div>
+                        <div class="severity-name">Moderate NPDR</div>
+                    </div>
+                    <div class="severity-body">
+                        <h4>Hemorrhages & Exudates</h4>
+                        <p>Microaneurysms, intraretinal dot-and-blot hemorrhages, and hard lipid exudates in 1-3 quadrants.</p>
+                        <div class="action-tag">Consult in 3-6 Months</div>
+                    </div>
+                </div>
+
+                <div class="severity-card" data-level="3">
+                    <div class="severity-header grade-3">
+                        <div class="severity-number">3</div>
+                        <div class="severity-name">Severe NPDR</div>
+                    </div>
+                    <div class="severity-body">
+                        <h4>4:2:1 Clinical Criteria</h4>
+                        <p>&gt;20 hemorrhages per quadrant, venous beading in 2+ quadrants, or IRMA in 1+ quadrant.</p>
+                        <div class="action-tag alert">Urgent Specialist (2-4 wks)</div>
+                    </div>
+                </div>
+
+                <div class="severity-card" data-level="4">
+                    <div class="severity-header grade-4">
+                        <div class="severity-number">4</div>
+                        <div class="severity-name">Proliferative DR</div>
+                    </div>
+                    <div class="severity-body">
+                        <h4>Neovascularization (PDR)</h4>
+                        <p>Abnormal new blood vessels on disc (NVD) or retina (NVE), vitreous hemorrhage risk.</p>
+                        <div class="action-tag critical">EMERGENCY (24-48 hrs)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= ABOUT SECTION ================= -->
+    <section id="about" class="about-section">
+        <div class="container">
+            <div class="section-header">
+                <div class="header-pill">System Architecture</div>
+                <h2 class="section-title">About VisionAries</h2>
+                <p class="section-subtitle">Deep Learning Framework & Telemetry Integration</p>
+            </div>
+            <div class="about-grid">
+                <div class="about-card">
+                    <div class="card-icon">🧠</div>
+                    <h3 class="card-title">ResNet-152 Neural Backbone</h3>
+                    <p class="card-description">Deep convolutional architecture trained on extensive annotated retinal fundus datasets with specialized residual feature mapping.</p>
+                </div>
+
+                <div class="about-card">
+                    <div class="card-icon">📊</div>
+                    <h3 class="card-title">Patient Telemetry Integration</h3>
+                    <p class="card-description">Diabetic duration, HbA1c, blood pressure, and ocular symptoms are recorded alongside retinal imagery for holistic clinical risk assessment.</p>
+                </div>
+
+                <div class="about-card">
+                    <div class="card-icon">📑</div>
+                    <h3 class="card-title">Multi-Format EMR/EHR Export</h3>
+                    <p class="card-description">Instant generation of certified PDF diagnostic reports, CSV tabular databases, and FHIR-compatible JSON records for seamless electronic health record ingestion.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <svg width="24" height="24" viewBox="0 0 34 34" fill="none">
+                            <rect width="34" height="34" rx="8" fill="#ffffff" stroke="#d4af37" stroke-width="1.2"/>
+                            <circle cx="17" cy="17" r="9" stroke="#b8860b" stroke-width="2" />
+                            <circle cx="17" cy="17" r="4.5" fill="#d4af37" />
+                        </svg>
+                        <span>VisionAries</span>
+                    </div>
+                    <p class="footer-description">
+                        Clinical AI Diabetic Retinopathy Diagnostic Platform. Supporting healthcare practitioners with automated screening, certified reporting, and auditable patient analytics.
+                    </p>
+                </div>
+                <div class="footer-section">
+                    <h4>Clinical Notice</h4>
+                    <p>VisionAries is a decision-support and screening platform. All diagnostic findings must be correlated with clinical examination by an ophthalmologist or retinal specialist.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Technology</h4>
+                    <p>Powered by PyTorch ResNet-152 deep convolutional neural networks with ICDR standard grading classification.</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="copyright">&copy; 2026 VisionAries. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notification Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="/script.js"></script>
+</body>
+
+</html>
