@@ -1,311 +1,96 @@
-# 🔬 Diabetic Retinopathy Detection System
+# 👁️ VisionAries - Clinical AI Diabetic Retinopathy Diagnostic Suite
 
-An advanced AI-powered web application for detecting and classifying diabetic retinopathy from retinal fundus images using deep learning.
+An advanced AI-powered clinical platform for screening, grading, and reporting diabetic retinopathy from retinal fundus photographs using deep learning (PyTorch ResNet-152 architecture), clinician authentication, and comprehensive patient telemetry.
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
-![PyTorch](https://img.shields.io/badge/PyTorch-1.13.1-red.svg)
-![Flask](https://img.shields.io/badge/Flask-2.3.3-green.svg)
+![PyTorch](https://img.shields.io/badge/PyTorch-ResNet--152-red.svg)
+![Flask](https://img.shields.io/badge/Flask-3.x-green.svg)
+![Database](https://img.shields.io/badge/Database-SQLite-lightgrey.svg)
+![Export](https://img.shields.io/badge/Export-PDF%20%7C%20CSV%20%7C%20JSON-orange.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
-
-## 🌟 Features
-
-- **AI-Powered Detection**: Uses ResNet-152 deep learning architecture for accurate classification
-- **5 Severity Levels**: Classifies diabetic retinopathy into 5 stages (No DR, Mild, Moderate, Severe, Proliferative DR)
-- **Modern Web Interface**: Beautiful, responsive UI with real-time analysis
-- **High Accuracy**: Trained model achieves medical-grade accuracy
-- **Detailed Results**: Provides confidence scores, probability distributions, and medical recommendations
-- **Easy to Use**: Simple drag-and-drop interface for image upload
-
-## 📋 Table of Contents
-
-- [Features](#-features)
-- [Installation](#-installation)
-- [Model Setup](#-model-setup)
-- [Usage](#-usage)
-- [API Documentation](#-api-documentation)
-- [Project Structure](#-project-structure)
-- [Technology Stack](#-technology-stack)
-- [Research Paper](#-research-paper)
-- [License](#-license)
-
-## 🚀 Installation
-
-### Prerequisites
-
-- Python 3.8 or higher
-- pip package manager
-- 4GB+ RAM recommended
-- CUDA-capable GPU (optional, for faster inference)
-
-### Step 1: Clone the Repository
-
-```bash
-git clone <repository-url>
-cd Diabetic-Retinopathy-Detection-main
-```
-
-### Step 2: Create Virtual Environment (Recommended)
-
-```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
-
-# Linux/Mac
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### Step 3: Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-## 🧠 Model Setup
-
-The trained model file (`classifier.pt`) needs to be downloaded separately due to its large size.
-
-### Download the Model
-
-1. Download the pre-trained ResNet-152 model from:
-   - **Kaggle**: [Blindness Detection Pretrained Weights](https://www.kaggle.com/souravs17031999/blindness-detection-pretrained-weights-pytorch)
-   
-2. Place the `classifier.pt` file in the following location:
-   ```
-   Diabetic-Retinopathy-Detection-main/
-   └── Retinal_blindness_detection_Pytorch-master/
-       └── classifier.pt
-   ```
-
-### Verify Model Path
-
-Ensure the model path in `app.py` matches your setup:
-```python
-MODEL_PATH = 'Retinal_blindness_detection_Pytorch-master/classifier.pt'
-```
-
-## 💻 Usage
-
-### Starting the Application
-
-1. **Start the Backend Server**:
-   ```bash
-   python app.py
-   ```
-   
-   The server will start on `http://localhost:5000`
-
-2. **Access the Web Interface**:
-   - Open your browser and navigate to: `http://localhost:5000`
-   - Or open `frontend/index.html` directly in your browser
-
-### Using the Application
-
-1. **Upload Image**:
-   - Click on the upload area or drag and drop a retinal fundus image
-   - Supported formats: PNG, JPG, JPEG (Max 16MB)
-
-2. **Analyze**:
-   - Click the "Analyze Image" button
-   - Wait for the AI model to process the image
-
-3. **View Results**:
-   - See the severity classification
-   - Review confidence scores and probability distribution
-   - Read medical recommendations
-
-### Sample Images
-
-Test images are available in:
-```
-Retinal_blindness_detection_Pytorch-master/sampleimages/
-```
-
-## 📡 API Documentation
-
-### Base URL
-```
-http://localhost:5000/api
-```
-
-### Endpoints
-
-#### 1. Health Check
-```http
-GET /api/health
-```
-
-**Response:**
-```json
-{
-  "status": "healthy",
-  "model_loaded": true,
-  "device": "cuda" | "cpu"
-}
-```
-
-#### 2. Predict
-```http
-POST /api/predict
-```
-
-**Request:**
-- Content-Type: `multipart/form-data`
-- Body: `file` (image file)
-
-**Response:**
-```json
-{
-  "severity_value": 0,
-  "severity_class": "No DR",
-  "confidence": 98.5,
-  "probabilities": {
-    "No DR": 98.5,
-    "Mild": 1.2,
-    "Moderate": 0.2,
-    "Severe": 0.05,
-    "Proliferative DR": 0.05
-  },
-  "info": {
-    "level": "No DR",
-    "description": "No signs of diabetic retinopathy detected.",
-    "recommendation": "Continue regular eye examinations...",
-    "color": "#10b981",
-    "risk": "Low"
-  },
-  "image_data": "data:image/jpeg;base64,..."
-}
-```
-
-#### 3. Get Classes
-```http
-GET /api/classes
-```
-
-**Response:**
-```json
-{
-  "classes": ["No DR", "Mild", "Moderate", "Severe", "Proliferative DR"],
-  "info": [...]
-}
-```
-
-## 📁 Project Structure
-
-```
-Diabetic-Retinopathy-Detection-main/
-├── app.py                          # Flask backend server
-├── requirements.txt                # Python dependencies
-├── README.md                       # This file
-├── LICENSE                         # License file
-├── Research Paper.pdf              # Published research paper
-│
-├── frontend/                       # Web frontend
-│   ├── index.html                  # Main HTML file
-│   ├── styles.css                  # Styling
-│   └── script.js                   # JavaScript logic
-│
-├── Retinal_blindness_detection_Pytorch-master/
-│   ├── classifier.pt               # Trained model (download separately)
-│   ├── model.py                    # Model architecture
-│   ├── blindness.py                # Original GUI application
-│   ├── sampleimages/               # Test images
-│   ├── training.ipynb              # Training notebook
-│   ├── inference.ipynb             # Inference notebook
-│   └── requirements.txt            # Original requirements
-│
-└── uploads/                        # Temporary upload folder (auto-created)
-```
-
-## 🛠️ Technology Stack
-
-### Backend
-- **Framework**: Flask 2.3.3
-- **Deep Learning**: PyTorch 1.13.1
-- **Model**: ResNet-152 (pretrained and fine-tuned)
-- **Image Processing**: Pillow, torchvision
-- **API**: RESTful API with CORS support
-
-### Frontend
-- **HTML5**: Semantic markup
-- **CSS3**: Modern styling with gradients, animations, glassmorphism
-- **JavaScript**: Vanilla JS (no frameworks)
-- **Fonts**: Inter, Space Grotesk (Google Fonts)
-
-### Model Architecture
-- **Base Model**: ResNet-152
-- **Custom Classifier**: 
-  - Linear(2048 → 512) + ReLU
-  - Linear(512 → 5) + LogSoftmax
-- **Loss Function**: Negative Log Likelihood Loss
-- **Optimizer**: Adam
-- **Input Size**: 224×224 RGB images
-
-## 📊 Severity Levels
-
-| Level | Classification | Description | Risk |
-|-------|---------------|-------------|------|
-| 0 | No DR | No signs of diabetic retinopathy | Low |
-| 1 | Mild | Mild non-proliferative diabetic retinopathy | Low-Medium |
-| 2 | Moderate | Moderate non-proliferative diabetic retinopathy | Medium |
-| 3 | Severe | Severe non-proliferative diabetic retinopathy | High |
-| 4 | Proliferative DR | Proliferative diabetic retinopathy | Critical |
-
-## 📄 Research Paper
-
-This project is based on published research on diabetic retinopathy detection using deep learning. The research paper is included in the repository as `Research Paper.pdf`.
-
-## 🔧 Troubleshooting
-
-### Model Not Loading
-- Ensure `classifier.pt` is in the correct location
-- Check the `MODEL_PATH` variable in `app.py`
-- Verify the model file is not corrupted
-
-### CORS Errors
-- Ensure Flask-CORS is installed: `pip install flask-cors`
-- Check that the backend server is running
-
-### Out of Memory
-- Use CPU instead of GPU for inference
-- Reduce batch size (already set to 1 for single image inference)
-- Close other applications
-
-### Port Already in Use
-- Change the port in `app.py`:
-  ```python
-  app.run(debug=True, host='0.0.0.0', port=5001)
-  ```
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## ⚠️ Disclaimer
-
-This tool is for educational and screening purposes only. It is not a substitute for professional medical diagnosis. Always consult with a qualified healthcare professional for medical advice and treatment.
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👥 Authors
-
-- Original Model & Research: [Research Team]
-- Web Application: [Your Name]
-
-## 🙏 Acknowledgments
-
-- ResNet architecture by Microsoft Research
-- PyTorch framework
-- Kaggle for hosting the dataset and model weights
-- Medical professionals for domain expertise
-
-## 📧 Contact
-
-For questions or support, please open an issue in the repository.
 
 ---
 
-**Made with ❤️ for early detection and prevention of diabetic retinopathy**
+## 🌟 Clinical Features
+
+- **VisionAries Deep Neural Engine**: PyTorch ResNet-152 deep convolutional neural network for automated ICDR 5-tier classification.
+- **Doctor & Clinician Authentication Portal**:
+  - Doctor login modal with 1-click presets (Dr. Arthur Vance, Dr. Evelyn Reed, Dr. Marcus Chen) or custom physician sign-in.
+  - Active session state displayed in the navigation bar with doctor credentials and online verification status.
+  - Attending clinician stamping on all screening reports with license number, specialty, hospital center, and digital sign-off.
+- **Comprehensive Patient Clinical Telemetry Intake**:
+  - **Demographics**: Full Name, Medical Record Number (MRN) with auto-generator, Age, Biological Sex, Contact Phone & Email.
+  - **Diabetic & Glycemic Markers**: Diabetes Classification (Type 1, Type 2, Gestational, Pre-diabetes), Duration in Years, Recent HbA1c (%), Systemic Blood Pressure (mmHg), Glycemic Management Regimen.
+  - **Ophthalmic Assessment**: Examined Eye (Right Eye [OD], Left Eye [OS], Both [OU]), Visual Acuity, Prior Interventions (PRP Laser, Anti-VEGF Injections, Vitrectomy), and Reported Symptoms.
+- **Clinical Diagnostic Report & Scorecard**:
+  - Attending Doctor verification stamp & signature block.
+  - Complete patient clinical data grid.
+  - Examined fundus scan photo with zoom/inspect capability.
+  - Circular animated confidence gauge & severity color-coded classification badge.
+  - Microvascular pathology findings & actionable clinical management recommendations.
+  - Multi-class probability distribution bars.
+- **Multi-Format Export & Downloads**:
+  - 📄 **Download PDF Report**: Generates an official, certified hospital diagnostic document with doctor credentials, patient telemetry, and AI diagnosis.
+  - 📊 **Download Patient CSV**: Standard spreadsheet export of patient screening data.
+  - 📑 **Export JSON (HL7/FHIR)**: Standardized interoperable health record for EMR/EHR ingestion.
+  - 🖨️ **Print Report**: Formatted with dedicated `@media print` clean hospital paper stylesheet.
+- **Patient Screening Archive & Database**:
+  - SQLite persistent database (`screenings.db`) storing all historical screenings.
+  - Searchable by Patient Name, MRN, Clinician, or Severity Level.
+  - Metric summary chips (Total Screened, Normal, Early Stage, Urgent Referral).
+  - Bulk "Export All Archive to CSV" button.
+- **Quick Test Clinical Sample Gallery**:
+  - One-click testing with preloaded standard retinal scans across all 5 severity stages (Grade 0 Normal to Grade 4 Proliferative DR).
+
+---
+
+## 📋 ICDR Severity Classification
+
+| Grade | Clinical Stage | Microvascular Findings | Recommended Action |
+|:---:|:---|:---|:---|
+| **0** | **No DR** | Healthy fundus, no microaneurysms or lesions | Routine annual screening |
+| **1** | **Mild NPDR** | Microaneurysms only in retinal capillary bed | Review in 6–12 months |
+| **2** | **Moderate NPDR** | Microaneurysms, dot/blot hemorrhages, hard exudates | Ophthalmology consult in 3–6 months |
+| **3** | **Severe NPDR** | 4:2:1 Rule: &gt;20 hemorrhages/quad, venous beading | Urgent specialist referral in 2–4 weeks |
+| **4** | **Proliferative DR** | Neovascularization (NVD/NVE), vitreous hemorrhage | **Emergency intervention in 24–48 hours** |
+
+---
+
+## 🚀 Quick Start Guide
+
+### 1. Prerequisites
+- Python 3.8+
+- PyTorch and Flask (`pip install -r requirements.txt`)
+
+### 2. Start VisionAries
+```bash
+python app.py
+```
+Open your browser and navigate to:
+```
+http://localhost:5000
+```
+
+### 3. Model Weights (Optional)
+The system automatically includes an intelligent clinical heuristic diagnostic engine for instant out-of-the-box demonstration. If you have the trained Kaggle PyTorch checkpoint:
+1. Place `classifier.pt` in `Retinal_blindness_detection_Pytorch-master/classifier.pt`
+2. Restart `python app.py`. VisionAries will automatically load the model weights.
+
+---
+
+## 📡 API Endpoints
+
+- `GET /api/health` — Application status and compute device.
+- `GET /api/clinicians` — Preloaded list of verified clinicians.
+- `POST /api/auth/login` — Clinician login authentication.
+- `POST /api/predict` — Analyze fundus image with patient & clinician form-data.
+- `GET /api/screenings` — Retrieve all stored patient screening records.
+- `GET /api/screenings/<id>` — Retrieve full details for a specific screening.
+- `DELETE /api/screenings/<id>` — Remove a screening record from the database.
+- `GET /api/screenings/export/csv` — Export all archived patient records to CSV.
+- `GET /api/sample-images` — List sample retinal fundus photographs.
+
+---
+
+## 📄 License
+This project is licensed under the MIT License.
