@@ -360,6 +360,7 @@ def serve_static(path):
     return send_from_directory(FRONTEND_DIR, 'index.html')
 
 @app.route('/api/health', methods=['GET'])
+@app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
     return jsonify({
@@ -373,6 +374,7 @@ def health_check():
     })
 
 @app.route('/api/clinicians', methods=['GET'])
+@app.route('/clinicians', methods=['GET'])
 def get_clinicians():
     """Return preloaded clinicians list"""
     return jsonify({
@@ -380,6 +382,7 @@ def get_clinicians():
     })
 
 @app.route('/api/auth/login', methods=['POST'])
+@app.route('/auth/login', methods=['POST'])
 def clinician_login():
     """Clinician login authentication"""
     data = request.get_json() or {}
@@ -423,6 +426,7 @@ def clinician_login():
     })
 
 @app.route('/api/sample-images', methods=['GET'])
+@app.route('/sample-images', methods=['GET'])
 def get_sample_images():
     """List sample images available in frontend/samples with descriptions"""
     sample_list = []
@@ -458,6 +462,7 @@ def get_sample_images():
     return jsonify({'samples': sample_list})
 
 @app.route('/api/predict', methods=['POST'])
+@app.route('/predict', methods=['POST'])
 def predict():
     """
     Main prediction & screening intake endpoint.
@@ -584,6 +589,7 @@ def predict():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/screenings', methods=['GET'])
+@app.route('/screenings', methods=['GET'])
 def get_screenings():
     """Retrieve all archived patient screenings"""
     try:
@@ -615,6 +621,7 @@ def get_screenings():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/screenings/<screening_id>', methods=['GET'])
+@app.route('/screenings/<screening_id>', methods=['GET'])
 def get_screening_detail(screening_id):
     """Retrieve complete details for a single screening by ID, including image data"""
     try:
@@ -637,6 +644,7 @@ def get_screening_detail(screening_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/screenings/<screening_id>', methods=['DELETE'])
+@app.route('/screenings/<screening_id>', methods=['DELETE'])
 def delete_screening(screening_id):
     """Delete a screening record"""
     try:
@@ -650,6 +658,7 @@ def delete_screening(screening_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/screenings/export/csv', methods=['GET'])
+@app.route('/screenings/export/csv', methods=['GET'])
 def export_csv():
     """Export all patient screenings into a downloadable CSV file"""
     try:
@@ -703,6 +712,7 @@ def export_csv():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/classes', methods=['GET'])
+@app.route('/classes', methods=['GET'])
 def get_classes():
     """Get all severity classes with medical specifications"""
     return jsonify({

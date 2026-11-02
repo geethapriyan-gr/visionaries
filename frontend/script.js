@@ -3,8 +3,18 @@
  * Frontend Controller: Clinician Authentication, Patient Telemetry, AI Grading & Multi-Format Reporting
  */
 
-// API Base URL (Relative for seamless local & deployed routing)
-const API_BASE_URL = '/api';
+// API Base URL (Auto-detects whether running on Flask port 5000, static dev server 5500, or deployed cloud domain)
+const isLocalStaticDev = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && 
+                          window.location.port && 
+                          window.location.port !== '5000';
+
+const API_BASE_URL = isLocalStaticDev 
+    ? `${window.location.protocol}//${window.location.hostname}:5000/api` 
+    : '/api';
+
+const SAMPLES_BASE_URL = isLocalStaticDev 
+    ? `${window.location.protocol}//${window.location.hostname}:5000/samples` 
+    : '/samples';
 
 // Predefined Clinicians
 const PRESET_CLINICIANS = [
@@ -324,9 +334,25 @@ function removeSelectedFile() {
 // Quick Sample Image Selector
 async function selectSampleImage(filename, gradeLabel, note) {
     try {
-        const url = `/samples/${filename}`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Sample image file unavailable');
+        let response = null;
+        const candidateUrls = [
+            `${SAMPLES_BASE_URL}/${filename}`,
+            `/samples/${filename}`,
+            `/public/samples/${filename}`,
+            `/frontend/samples/${filename}`
+        ];
+
+        for (const url of candidateUrls) {
+            try {
+                const res = await fetch(url);
+                if (res.ok) {
+                    response = res;
+                    break;
+                }
+            } catch (_) {}
+        }
+
+        if (!response || !response.ok) throw new Error('Sample image file unavailable');
         const blob = await response.blob();
         const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
         
@@ -405,8 +431,20 @@ async function handleScreeningSubmit(e) {
         });
 
         if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error || 'Diagnostic evaluation failed.');
+            let errorMsg = 'Diagnostic evaluation failed.';
+            try {
+                const errData = await response.json();
+                if (errData && errData.error) {
+                    errorMsg = errData.error;
+                }
+            } catch (jsonErr) {
+                if (response.status === 501 || response.status === 404) {
+                    errorMsg = `API server unreachable on this port (HTTP ${response.status}). Please run 'python app.py' and open http://localhost:5000`;
+                } else {
+                    errorMsg = `Diagnostic evaluation failed (HTTP ${response.status}).`;
+                }
+            }
+            throw new Error(errorMsg);
         }
 
         const result = await response.json();
